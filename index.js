@@ -8,7 +8,7 @@ app.use(express.json());
 app.use(cors())
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.duk9d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -21,6 +21,7 @@ const client = new MongoClient(uri, {
 });
 const tutorCollection = client.db("LearnLang").collection("tutors")
 const myTutorialCollection = client.db("LearnLang").collection("myTutorials")
+const myBookedTutorCollection = client.db("LearnLang").collection("myBookedTutors")
 
 async function run() {
   try {
@@ -51,6 +52,21 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/tutor/:id', async(req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = {_id: id}
+      const result = await tutorCollection.findOne(query)
+      res.send(result)
+    })
+
+    app.post('/my-booked-tutors', async(req, res)=> {
+      const tutor = req.body;
+      console.log(tutor);
+      const result = await myBookedTutorCollection.insertOne(tutor)
+      res.send(result)
+
+    })
 
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
