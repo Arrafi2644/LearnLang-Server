@@ -11,7 +11,6 @@ app.use(cors())
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.duk9d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
     serverApi: {
@@ -21,6 +20,7 @@ const client = new MongoClient(uri, {
     }
 });
 const tutorCollection = client.db("LearnLang").collection("tutors")
+const myTutorialCollection = client.db("LearnLang").collection("myTutorials")
 
 async function run() {
   try {
@@ -28,12 +28,19 @@ async function run() {
     // await client.connect();
     // Send a ping to confirm a successful connection
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
+
 
     app.get('/tutors', async(req, res)=>{
         const cursor = tutorCollection.find()
         const result = await cursor.toArray();
         res.send(result);
+    })
+
+    app.post('/tutors', async(req, res) => {
+      const tutorial = req.body;
+      const result = await myTutorialCollection.insertOne(tutorial)
+      res.send(result)
     })
 
 
