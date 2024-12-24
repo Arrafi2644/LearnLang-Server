@@ -37,7 +37,15 @@ async function run() {
         res.send(result);
     })
 
-    app.post('/tutors', async(req, res) => {
+
+    // my tutorial apis 
+
+    app.get('/my-tutorials', async(req, res) => {
+      const result = await myTutorialCollection.find().toArray()
+      res.send(result)
+    })
+
+    app.post('/my-tutorials', async(req, res) => {
       const tutorial = req.body;
       const result = await myTutorialCollection.insertOne(tutorial)
       res.send(result)
