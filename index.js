@@ -33,30 +33,109 @@ async function run() {
 
 
     app.get('/tutors', async(req, res)=>{
+  
+
         const cursor = tutorCollection.find()
+        
         const result = await cursor.toArray();
         res.send(result);
+    })
+
+    app.get('/tutors/:search', async(req, res)=>{
+      const search = req.params.search
+
+console.log(search);
+        const query = {
+          language: {
+            $regex: search,
+            $options: 'i'
+          }
+        }
+
+        const cursor = tutorCollection.find(query)
+        
+        const result = await cursor.toArray();
+        res.send(result);
+    })
+
+    app.get('/tutors/user/:email', async(req, res)=>{
+      const email = req.params.email;
+      const query = {email:email}
+      const result = await tutorCollection.find(query).toArray();
+      res.send(result)
+  })
+
+    app.post('/tutors', async(req, res) => {
+      
+      const tutorial = req.body;
+      console.log(tutorial);
+      const result = await tutorCollection.insertOne(tutorial)
+      res.send(result)
     })
 
 
     // my tutorial apis 
 
-    app.get('/my-tutorials', async(req, res) => {
-      const result = await myTutorialCollection.find().toArray()
+    // app.get('/my-tutorials', async(req, res) => {
+    //   const result = await myTutorialCollection.find().toArray()
+    //   res.send(result)
+    // })
+
+    // app.post('/my-tutorials', async(req, res) => {
+    //   const tutorial = req.body;
+    //   const result = await myTutorialCollection.insertOne(tutorial)
+    //   res.send(result)
+    // })
+
+    app.delete('/tutors/myTutorials/:id', async(req, res) => {
+     const id = req.params.id
+    //  console.log(id);
+     const query = {_id : new ObjectId(id)}
+    //  console.log(query);
+     const result = await tutorCollection.deleteOne(query)
+    //  console.log(result)
+     res.send(result)
+    })
+
+    app.put('/tutors/:id', async(req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = {_id : new ObjectId(id)}
+      const options = {upsert: true}
+      const updatedTutorial = req.body;
+      console.log(updatedTutorial);
+      const tutorial = {
+          $set: {
+              name: updatedTutorial.name,
+              language: updatedTutorial.language,
+              price: updatedTutorial.price,
+              review: updatedTutorial.review,
+              description: updatedTutorial.description,
+              image: updatedTutorial.image,
+              tutorImage: updatedTutorial.tutorImage,
+              email: updatedTutorial.email,
+          }
+      }
+
+      const result = await tutorCollection.updateOne(filter, tutorial, options)
       res.send(result)
     })
 
-    app.post('/my-tutorials', async(req, res) => {
-      const tutorial = req.body;
-      const result = await myTutorialCollection.insertOne(tutorial)
-      res.send(result)
-    })
 
     app.get('/tutor/:id', async(req, res) => {
       const id = req.params.id;
       console.log(id);
-      const query = {_id: id}
+      const query = {_id: new ObjectId(id)}
       const result = await tutorCollection.findOne(query)
+      res.send(result)
+    })
+
+    // /my-tutorials/${id}
+
+    app.get('/my-booked-tutors/:email', async(req, res)=>{
+      const email = req.params.email;
+      const query = {userEmail: email}
+      const result = await myBookedTutorCollection.find(query).toArray()
       res.send(result)
     })
 
