@@ -97,6 +97,23 @@ async function run() {
       res.send(result);
     })
 
+    app.put('/tutors/:id', async (req, res)=>{
+      const tutor = (req.body);
+      // const id = req.params.id
+      console.log(tutor);
+      const filter = {_id : new ObjectId(tutor.courseId)}
+
+
+      const update = {
+        $inc : {review : 1}
+      }
+
+      const result = await tutorCollection.updateOne(filter, update)
+      res.send(result)
+
+  })
+  
+
     app.get('/tutors/:search', async (req, res) => {
       const search = req.params.search
 
@@ -121,6 +138,7 @@ async function run() {
       res.send(result)
     })
 
+    // my tutorials 
     app.get('/tutors/user/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email }
@@ -179,7 +197,7 @@ async function run() {
     })
 
 
-    app.get('/tutor/:id', async (req, res) => {
+    app.get('/tutor/:id',verifyToken, async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const query = { _id: new ObjectId(id) }
@@ -187,8 +205,8 @@ async function run() {
       res.send(result)
     })
 
-    // /my-tutorials/${id}
 
+  //  my booked 
     app.get('/my-booked-tutors/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email }
@@ -196,13 +214,34 @@ async function run() {
       res.send(result)
     })
 
+  
+
+    // book tutor 
     app.post('/my-booked-tutors', async (req, res) => {
       const tutor = req.body;
       console.log(tutor);
       const result = await myBookedTutorCollection.insertOne(tutor)
+      
+       
+       
       res.send(result)
 
     })
+
+  //       app.put('/my-booked-tutors/:id', async (req, res)=>{
+  //     console.log(req.body);
+  //     const id = req.params.id
+  //     const filter = {_id : new ObjectId(id)}
+
+  //     const update = {
+  //       $inc : {review : 1}
+  //     }
+
+  //     const result = await tutorCollection.updateOne(filter, update)
+  //     res.send(result)
+
+  // })
+  
 
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
