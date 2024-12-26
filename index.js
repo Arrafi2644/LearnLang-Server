@@ -98,6 +98,8 @@ async function run() {
     })
 
     app.put('/tutors/:id', async (req, res)=>{
+
+      
       const tutor = (req.body);
       // const id = req.params.id
       console.log(tutor);
@@ -111,6 +113,13 @@ async function run() {
       const result = await tutorCollection.updateOne(filter, update)
       res.send(result)
 
+  })
+
+  app.get('/tutors/:id', async(req, res)=> {
+    const id = req.params.id;
+    const query = {_id : new ObjectId(id)}
+    const result = await tutorCollection.findOne(query)
+    res.send(result)
   })
   
 
@@ -227,21 +236,6 @@ async function run() {
       res.send(result)
 
     })
-
-  //       app.put('/my-booked-tutors/:id', async (req, res)=>{
-  //     console.log(req.body);
-  //     const id = req.params.id
-  //     const filter = {_id : new ObjectId(id)}
-
-  //     const update = {
-  //       $inc : {review : 1}
-  //     }
-
-  //     const result = await tutorCollection.updateOne(filter, update)
-  //     res.send(result)
-
-  // })
-  
 
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
