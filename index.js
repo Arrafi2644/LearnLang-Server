@@ -10,7 +10,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'https://learn-lang-85203.web.app',
-    'https://learn-lang-85203.firebaseapp.com'
+    'https://learn-lang-85203.firebaseapp.com',
   ],
   credentials: true
 }))
@@ -89,17 +89,28 @@ async function run() {
     // Tutor related apis 
 
     app.get('/tutors', async (req, res) => {
-
-
-      const cursor = tutorCollection.find()
+      const category = req.query.language;
+      console.log(category);
+      // console.log('/tutors');
+      let query = {}
+      if(category){
+        query.language = category
+      } 
+      
+      const cursor = tutorCollection.find(query)
 
       const result = await cursor.toArray();
       res.send(result);
     })
 
-    app.put('/tutors/:id', async (req, res)=>{
+    app.get('/tutors/:id', async(req, res)=> {
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)}
+      const result = await tutorCollection.findOne(query)
+      res.send(result)
+    })
 
-      
+    app.put('/tutors/:id', async (req, res)=>{
       const tutor = (req.body);
       // const id = req.params.id
       console.log(tutor);
@@ -115,12 +126,7 @@ async function run() {
 
   })
 
-  app.get('/tutors/:id', async(req, res)=> {
-    const id = req.params.id;
-    const query = {_id : new ObjectId(id)}
-    const result = await tutorCollection.findOne(query)
-    res.send(result)
-  })
+ 
   
 
     app.get('/tutors/:search', async (req, res) => {
@@ -140,12 +146,13 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/tutors/:category', async (req, res) => {
+    app.get('/tutors/language/:category', async (req, res) => {
       const category = req.params.category;
       const query = { language: category }
       const result = await tutorCollection.find(query).toArray()
       res.send(result)
     })
+   
 
     // my tutorials 
     app.get('/tutors/user/:email', verifyToken, async (req, res) => {
@@ -181,7 +188,7 @@ async function run() {
       res.send(result)
     })
 
-    app.put('/tutors/:id', async (req, res) => {
+    app.put('/tutors/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const filter = { _id: new ObjectId(id) }
