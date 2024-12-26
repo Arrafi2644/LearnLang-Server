@@ -1,11 +1,40 @@
 require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 const app = express();
 const port = process.env.PORT || 5000;
 
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://learn-lang-85203.web.app',
+    'https://learn-lang-85203.firebaseapp.com'
+  ],
+  credentials: true
+}))
 app.use(express.json());
-app.use(cors())
+app.use(cookieParser())
+
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token
+  console.log("Token inside the verify token ", token);
+
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" })
+  }
+
+  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" })
+    }
+
+    req.user = decoded;
+
+    next()
+  })
+}
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -13,11 +42,11 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-    }
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
 });
 const tutorCollection = client.db("LearnLang").collection("tutors")
 const myTutorialCollection = client.db("LearnLang").collection("myTutorials")
@@ -31,90 +60,118 @@ async function run() {
 
     // await client.db("admin").command({ ping: 1 });
 
+    // jwt apis 
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.SECRET_KEY, { expiresIn: '5d' })
+      console.log(token);
 
-    app.get('/tutors', async(req, res)=>{
-  
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      })
+        .send({ success: true })
 
-        const cursor = tutorCollection.find()
-        
-        const result = await cursor.toArray();
-        res.send(result);
     })
 
-    app.get('/tutors/:search', async(req, res)=>{
+    app.post('/logout', async (req, res) => {
+      res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      })
+        .send({ message: 'success' })
+    })
+
+
+
+    // Tutor related apis 
+
+    app.get('/tutors', async (req, res) => {
+
+
+      const cursor = tutorCollection.find()
+
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+    app.get('/tutors/:search', async (req, res) => {
       const search = req.params.search
 
-console.log(search);
-        const query = {
-          language: {
-            $regex: search,
-            $options: 'i'
-          }
+      console.log(search);
+      const query = {
+        language: {
+          $regex: search,
+          $options: 'i'
         }
+      }
 
-        const cursor = tutorCollection.find(query)
-        
-        const result = await cursor.toArray();
-        res.send(result);
+      const cursor = tutorCollection.find(query)
+
+      const result = await cursor.toArray();
+      res.send(result);
     })
 
-    app.get('/tutors/user/:email', async(req, res)=>{
+    app.get('/tutors/:category', async (req, res) => {
+      const category = req.params.category;
+      const query = { language: category }
+      const result = await tutorCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    app.get('/tutors/user/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
-      const query = {email:email}
+      const query = { email: email }
+
+      if (req.user.email !== email) {
+        return res.status(403).send({ message: "forbidden" })
+      }
+
+      //  console.log(req.cookies)
+
       const result = await tutorCollection.find(query).toArray();
       res.send(result)
-  })
+    })
 
-    app.post('/tutors', async(req, res) => {
-      
+    app.post('/tutors', verifyToken, async (req, res) => {
+
       const tutorial = req.body;
-      console.log(tutorial);
+      // console.log(tutorial);
       const result = await tutorCollection.insertOne(tutorial)
       res.send(result)
     })
 
 
-    // my tutorial apis 
-
-    // app.get('/my-tutorials', async(req, res) => {
-    //   const result = await myTutorialCollection.find().toArray()
-    //   res.send(result)
-    // })
-
-    // app.post('/my-tutorials', async(req, res) => {
-    //   const tutorial = req.body;
-    //   const result = await myTutorialCollection.insertOne(tutorial)
-    //   res.send(result)
-    // })
-
-    app.delete('/tutors/myTutorials/:id', async(req, res) => {
-     const id = req.params.id
-    //  console.log(id);
-     const query = {_id : new ObjectId(id)}
-    //  console.log(query);
-     const result = await tutorCollection.deleteOne(query)
-    //  console.log(result)
-     res.send(result)
+    app.delete('/tutors/myTutorials/:id', async (req, res) => {
+      const id = req.params.id
+      //  console.log(id);
+      const query = { _id: new ObjectId(id) }
+      //  console.log(query);
+      const result = await tutorCollection.deleteOne(query)
+      //  console.log(result)
+      res.send(result)
     })
 
-    app.put('/tutors/:id', async(req, res) => {
+    app.put('/tutors/:id', async (req, res) => {
       const id = req.params.id;
       console.log(id);
-      const filter = {_id : new ObjectId(id)}
-      const options = {upsert: true}
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
       const updatedTutorial = req.body;
       console.log(updatedTutorial);
       const tutorial = {
-          $set: {
-              name: updatedTutorial.name,
-              language: updatedTutorial.language,
-              price: updatedTutorial.price,
-              review: updatedTutorial.review,
-              description: updatedTutorial.description,
-              image: updatedTutorial.image,
-              tutorImage: updatedTutorial.tutorImage,
-              email: updatedTutorial.email,
-          }
+        $set: {
+          name: updatedTutorial.name,
+          language: updatedTutorial.language,
+          price: updatedTutorial.price,
+          review: updatedTutorial.review,
+          description: updatedTutorial.description,
+          image: updatedTutorial.image,
+          tutorImage: updatedTutorial.tutorImage,
+          email: updatedTutorial.email,
+        }
       }
 
       const result = await tutorCollection.updateOne(filter, tutorial, options)
@@ -122,24 +179,24 @@ console.log(search);
     })
 
 
-    app.get('/tutor/:id', async(req, res) => {
+    app.get('/tutor/:id', async (req, res) => {
       const id = req.params.id;
       console.log(id);
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await tutorCollection.findOne(query)
       res.send(result)
     })
 
     // /my-tutorials/${id}
 
-    app.get('/my-booked-tutors/:email', async(req, res)=>{
+    app.get('/my-booked-tutors/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
-      const query = {userEmail: email}
+      const query = { userEmail: email }
       const result = await myBookedTutorCollection.find(query).toArray()
       res.send(result)
     })
 
-    app.post('/my-booked-tutors', async(req, res)=> {
+    app.post('/my-booked-tutors', async (req, res) => {
       const tutor = req.body;
       console.log(tutor);
       const result = await myBookedTutorCollection.insertOne(tutor)
@@ -158,11 +215,11 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-   res.send("LearnLang is running")
+  res.send("LearnLang is running")
 })
 
-app.listen(port, ()=>{
-    console.log("LearnLang is running on port ", port)
+app.listen(port, () => {
+  console.log("LearnLang is running on port ", port)
 })
 
 
