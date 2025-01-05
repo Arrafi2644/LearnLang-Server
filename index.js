@@ -188,7 +188,7 @@ async function run() {
       res.send(result)
     })
 
-    app.put('/tutors/:id', verifyToken, async (req, res) => {
+    app.put('/tutors/update/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const filter = { _id: new ObjectId(id) }
