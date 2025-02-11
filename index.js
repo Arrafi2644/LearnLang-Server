@@ -129,22 +129,22 @@ async function run() {
  
   
 
-    app.get('/tutors/:search', async (req, res) => {
-      const search = req.params.search
+    // app.get('/tutors/:search', async (req, res) => {
+    //   const search = req.params.search
 
-      console.log(search);
-      const query = {
-        language: {
-          $regex: search,
-          $options: 'i'
-        }
-      }
+    //   console.log(search);
+    //   const query = {
+    //     language: {
+    //       $regex: search,
+    //       $options: 'i'
+    //     }
+    //   }
 
-      const cursor = tutorCollection.find(query)
+    //   const cursor = tutorCollection.find(query)
 
-      const result = await cursor.toArray();
-      res.send(result);
-    })
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // })
 
     app.get('/tutors/language/:category', async (req, res) => {
       const category = req.params.category;
@@ -188,7 +188,7 @@ async function run() {
       res.send(result)
     })
 
-    app.put('/tutors/update/:id', verifyToken, async (req, res) => {
+    app.put('/tutors/update/:id', async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const filter = { _id: new ObjectId(id) }
