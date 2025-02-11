@@ -90,6 +90,8 @@ async function run() {
 
     app.get('/tutors', async (req, res) => {
       const category = req.query.language;
+      const search = req.query.search;
+      // console.log(search);
       console.log(category);
       // console.log('/tutors');
       let query = {}
@@ -127,24 +129,22 @@ async function run() {
   })
 
  
-  
+    app.get('/tutors/search/language/:search', async (req, res) => {
+      const search = req.params.search
 
-    // app.get('/tutors/:search', async (req, res) => {
-    //   const search = req.params.search
+      console.log(search);
+      const query = {
+        language: {
+          $regex: search,
+          $options: 'i'
+        }
+      }
 
-    //   console.log(search);
-    //   const query = {
-    //     language: {
-    //       $regex: search,
-    //       $options: 'i'
-    //     }
-    //   }
+      const cursor = tutorCollection.find(query)
 
-    //   const cursor = tutorCollection.find(query)
-
-    //   const result = await cursor.toArray();
-    //   res.send(result);
-    // })
+      const result = await cursor.toArray();
+      res.send(result);
+    })
 
     app.get('/tutors/language/:category', async (req, res) => {
       const category = req.params.category;
