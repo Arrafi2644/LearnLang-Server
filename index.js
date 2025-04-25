@@ -89,21 +89,24 @@ async function run() {
     // Tutor related apis 
 
     app.get('/tutors', async (req, res) => {
-      const category = req.query.language;
+      const sort = req.query.sort
       const search = req.query.search;
-      // console.log(search);
-      console.log(category);
-      // console.log('/tutors');
-      let query = {}
-      if(category){
-        query.language = category
-      } 
+
+      console.log("sort by ", sort);
       
-      const cursor = tutorCollection.find(query)
+      let cursor = tutorCollection.find()
+
+      if(sort === "asc"){
+          cursor = cursor.sort({price: 1})
+      }else if(sort === "desc"){
+        cursor = cursor.sort({price: -1})
+      }
 
       const result = await cursor.toArray();
       res.send(result);
     })
+
+
 
     app.get('/tutors/:id', async(req, res)=> {
       const id = req.params.id;
@@ -128,7 +131,6 @@ async function run() {
 
   })
 
- 
     app.get('/tutors/search/language/:search', async (req, res) => {
       const search = req.params.search
 
