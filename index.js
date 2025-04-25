@@ -91,18 +91,30 @@ async function run() {
     app.get('/tutors', async (req, res) => {
       const sort = req.query.sort
       const search = req.query.search;
+      const category = req.query.category;
 
       console.log("sort by ", sort);
       console.log("search ", search);
+      console.log("category ", category);
       let query = {};
-      if (search) {
+
+      if(category){
+        if (category) {
+          query.language = {
+            $regex: category,
+            $options: "i"
+          };
+        }
+      }
+      if (search || category) {
         query.$or = [
           {language: {
             $regex: search, $options: "i",
           }},
           {name: {
             $regex: search, $options: "i",
-          }}
+          }},
+          
         ]
       }
       let cursor = tutorCollection.find(query)
