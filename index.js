@@ -93,13 +93,24 @@ async function run() {
       const search = req.query.search;
 
       console.log("sort by ", sort);
-      
-      let cursor = tutorCollection.find()
+      console.log("search ", search);
+      let query = {};
+      if (search) {
+        query.$or = [
+          {language: {
+            $regex: search, $options: "i",
+          }},
+          {name: {
+            $regex: search, $options: "i",
+          }}
+        ]
+      }
+      let cursor = tutorCollection.find(query)
 
-      if(sort === "asc"){
-          cursor = cursor.sort({price: 1})
-      }else if(sort === "desc"){
-        cursor = cursor.sort({price: -1})
+      if (sort === "asc") {
+        cursor = cursor.sort({ price: 1 })
+      } else if (sort === "desc") {
+        cursor = cursor.sort({ price: -1 })
       }
 
       const result = await cursor.toArray();
@@ -108,28 +119,28 @@ async function run() {
 
 
 
-    app.get('/tutors/:id', async(req, res)=> {
+    app.get('/tutors/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id : new ObjectId(id)}
+      const query = { _id: new ObjectId(id) }
       const result = await tutorCollection.findOne(query)
       res.send(result)
     })
 
-    app.put('/tutors/:id', async (req, res)=>{
+    app.put('/tutors/:id', async (req, res) => {
       const tutor = (req.body);
       // const id = req.params.id
       console.log(tutor);
-      const filter = {_id : new ObjectId(tutor.courseId)}
+      const filter = { _id: new ObjectId(tutor.courseId) }
 
 
       const update = {
-        $inc : {review : 1}
+        $inc: { review: 1 }
       }
 
       const result = await tutorCollection.updateOne(filter, update)
       res.send(result)
 
-  })
+    })
 
     app.get('/tutors/search/language/:search', async (req, res) => {
       const search = req.params.search
@@ -154,7 +165,7 @@ async function run() {
       const result = await tutorCollection.find(query).toArray()
       res.send(result)
     })
-   
+
 
     // my tutorials 
     app.get('/tutors/user/:email', verifyToken, async (req, res) => {
@@ -215,7 +226,7 @@ async function run() {
     })
 
 
-    app.get('/tutor/:id',verifyToken, async (req, res) => {
+    app.get('/tutor/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const query = { _id: new ObjectId(id) }
@@ -224,7 +235,7 @@ async function run() {
     })
 
 
-  //  my booked 
+    //  my booked 
     app.get('/my-booked-tutors/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email }
@@ -232,16 +243,16 @@ async function run() {
       res.send(result)
     })
 
-  
+
 
     // book tutor 
     app.post('/my-booked-tutors', async (req, res) => {
       const tutor = req.body;
       console.log(tutor);
       const result = await myBookedTutorCollection.insertOne(tutor)
-      
-       
-       
+
+
+
       res.send(result)
 
     })
